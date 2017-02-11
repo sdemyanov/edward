@@ -79,7 +79,7 @@ class MAP(VariationalInference):
     if isinstance(latent_vars, list):
       with tf.variable_scope("posterior"):
         latent_vars = {rv: PointMass(
-            params=tf.Variable(tf.random_normal(rv.batch_shape())))
+            params=tf.Variable(tf.random_normal(rv.batch_shape_tensor())))
             for rv in latent_vars}
     elif isinstance(latent_vars, dict):
       for qz in six.itervalues(latent_vars):
