@@ -6,7 +6,8 @@ import tensorflow as tf
 
 from edward.models.random_variable import RandomVariable
 from edward.models.random_variables import Bernoulli, Beta
-from tensorflow.contrib.distributions import Distribution
+from tensorflow.contrib.distributions import \
+    Distribution, NOT_REPARAMETERIZED
 
 
 class DirichletProcess(RandomVariable, Distribution):
@@ -52,14 +53,15 @@ class DirichletProcess(RandomVariable, Distribution):
 
         super(DirichletProcess, self).__init__(
             dtype=tf.int32,
+            is_continuous=False,
+            reparameterization_type=NOT_REPARAMETERIZED,
+            validate_args=validate_args,
+            allow_nan_stats=allow_nan_stats,
             parameters={"alpha": self._alpha,
                         "base_cls": self._base_cls,
                         "args": self._base_args,
                         "kwargs": self._base_kwargs},
-            is_continuous=False,
-            is_reparameterized=False,
-            validate_args=validate_args,
-            allow_nan_stats=allow_nan_stats,
+            graph_parents=[self._alpha],
             name=ns,
             value=value)
 
@@ -68,16 +70,16 @@ class DirichletProcess(RandomVariable, Distribution):
     """Concentration parameter."""
     return self._alpha
 
-  def _batch_shape(self):
+  def _batch_shape_tensor(self):
     return tf.convert_to_tensor(self.get_batch_shape())
 
-  def _get_batch_shape(self):
+  def _batch_shape(self):
     return self._alpha.get_shape()
 
-  def _event_shape(self):
+  def _event_shape_tensor(self):
     return tf.convert_to_tensor(self.get_event_shape())
 
-  def _get_event_shape(self):
+  def _event_shape(self):
     return self._base.get_shape()
 
   def _sample_n(self, n, seed=None):

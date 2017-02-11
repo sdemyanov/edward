@@ -6,7 +6,8 @@ import tensorflow as tf
 
 from edward.models.random_variable import RandomVariable
 from edward.util import get_dims
-from tensorflow.contrib.distributions import Distribution
+from tensorflow.contrib.distributions import \
+    Distribution, FULLY_REPARAMETERIZED
 
 
 class Empirical(RandomVariable, Distribution):
@@ -23,12 +24,13 @@ class Empirical(RandomVariable, Distribution):
 
         super(Empirical, self).__init__(
             dtype=self._params.dtype,
-            parameters={"params": self._params,
-                        "n": self._n},
             is_continuous=False,
-            is_reparameterized=True,
+            reparameterization_type=FULLY_REPARAMETERIZED,
             validate_args=validate_args,
             allow_nan_stats=allow_nan_stats,
+            parameters={"params": self._params,
+                        "n": self._n},
+            graph_parents=[self._params, self._n],
             name=ns,
             *args, **kwargs)
 
@@ -46,28 +48,28 @@ class Empirical(RandomVariable, Distribution):
     """Number of samples."""
     return self._n
 
-  def _batch_shape(self):
+  def _batch_shape_tensor(self):
     return tf.convert_to_tensor(self.get_batch_shape())
 
-  def _get_batch_shape(self):
+  def _batch_shape(self):
     return tf.TensorShape([])
 
-  def _event_shape(self):
+  def _event_shape_tensor(self):
     return tf.convert_to_tensor(self.get_event_shape())
 
-  def _get_event_shape(self):
+  def _event_shape(self):
     return self._params.get_shape()[1:]
 
   def _mean(self):
     return tf.reduce_mean(self._params, 0)
 
-  def _std(self):
+  def _stddev(self):
     # broadcasting T x shape - shape = T x shape
     r = self._params - self.mean()
     return tf.sqrt(tf.reduce_mean(tf.square(r), 0))
 
   def _variance(self):
-    return tf.square(self.std())
+    return tf.square(self.stddev())
 
   def _sample_n(self, n, seed=None):
     input_tensor = self._params

@@ -5,7 +5,8 @@ from __future__ import print_function
 import tensorflow as tf
 
 from edward.models.random_variable import RandomVariable
-from tensorflow.contrib.distributions import Distribution
+from tensorflow.contrib.distributions import \
+    Distribution, FULLY_REPARAMETERIZED
 
 
 class PointMass(RandomVariable, Distribution):
@@ -21,11 +22,12 @@ class PointMass(RandomVariable, Distribution):
         self._params = tf.identity(params, name="params")
         super(PointMass, self).__init__(
             dtype=self._params.dtype,
-            parameters={"params": self._params},
             is_continuous=False,
-            is_reparameterized=True,
+            reparameterization_type=FULLY_REPARAMETERIZED,
             validate_args=validate_args,
             allow_nan_stats=allow_nan_stats,
+            parameters={"params": self._params},
+            graph_parents=[self._params],
             name=ns,
             *args, **kwargs)
 
@@ -39,26 +41,26 @@ class PointMass(RandomVariable, Distribution):
     """Distribution parameter."""
     return self._params
 
-  def _batch_shape(self):
+  def _batch_shape_tensor(self):
     return tf.convert_to_tensor(self.get_batch_shape())
 
-  def _get_batch_shape(self):
+  def _batch_shape(self):
     return tf.TensorShape([])
 
-  def _event_shape(self):
+  def _event_shape_tensor(self):
     return tf.convert_to_tensor(self.get_event_shape())
 
-  def _get_event_shape(self):
+  def _event_shape(self):
     return self._params.get_shape()
 
   def _mean(self):
     return self._params
 
-  def _std(self):
+  def _stddev(self):
     return 0.0 * tf.ones_like(self._params)
 
   def _variance(self):
-    return tf.square(self.std())
+    return tf.square(self.stddev())
 
   def _sample_n(self, n, seed=None):
     input_tensor = self._params
