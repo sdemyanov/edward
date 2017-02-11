@@ -46,7 +46,7 @@ def inference_network(x):
   """Inference network to parameterize variational model. It takes
   data as input and outputs the variational parameters.
 
-  mu, sigma = neural_network(x)
+  loc, scale = neural_network(x)
   """
   with slim.arg_scope([slim.conv2d, slim.fully_connected],
                       activation_fn=tf.nn.elu,
@@ -60,9 +60,9 @@ def inference_network(x):
     net = slim.flatten(net)
     params = slim.fully_connected(net, d * 2, activation_fn=None)
 
-  mu = params[:, :d]
-  sigma = tf.nn.softplus(params[:, d:])
-  return mu, sigma
+  loc = params[:, :d]
+  scale = tf.nn.softplus(params[:, d:])
+  return loc, scale
 
 
 ed.set_seed(42)
@@ -81,14 +81,14 @@ if not os.path.exists(IMG_DIR):
 mnist = input_data.read_data_sets(DATA_DIR, one_hot=True)
 
 # MODEL
-z = Normal(mu=tf.zeros([M, d]), sigma=tf.ones([M, d]))
+z = Normal(loc=tf.zeros([M, d]), scale=tf.ones([M, d]))
 logits = generative_network(z)
 x = Bernoulli(logits=logits)
 
 # INFERENCE
 x_ph = tf.placeholder(tf.float32, [M, 28 * 28])
-mu, sigma = inference_network(x_ph)
-qz = Normal(mu=mu, sigma=sigma)
+loc, scale = inference_network(x_ph)
+qz = Normal(loc=loc, scale=scale)
 
 # Bind p(x, z) and q(z | x) to the same placeholder for x.
 data = {x: x_ph}
