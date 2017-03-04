@@ -47,14 +47,12 @@ hidden = Dense(256, activation='relu')(x_ph)
 qz = Normal(mu=Dense(d)(hidden),
             sigma=Dense(d, activation='softplus')(hidden))
 
-sess = ed.get_session()
-K.set_session(sess)
-
 # Bind p(x, z) and q(z | x) to the same TensorFlow placeholder for x.
 inference = ed.KLqp({z: qz}, data={x: x_ph})
 optimizer = tf.train.RMSPropOptimizer(0.01, epsilon=1.0)
 inference.initialize(optimizer=optimizer)
 
+sess = ed.get_session()
 init = tf.global_variables_initializer()
 init.run()
 
@@ -79,6 +77,6 @@ for epoch in range(n_epoch):
   print("log p(x) >= {:0.3f}".format(avg_loss))
 
   # Prior predictive check.
-  imgs = sess.run(x.value())
+  imgs = sess.run(x)
   for m in range(M):
     imsave(os.path.join(IMG_DIR, '%d.png') % m, imgs[m].reshape(28, 28))

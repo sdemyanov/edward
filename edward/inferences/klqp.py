@@ -111,7 +111,7 @@ class KLqp(VariationalInference):
     # for each pair in self.latent_vars. how?
     is_analytic_kl = all([_is_registered_kl(qz, z)
                           for z, qz in six.iteritems(self.latent_vars)]) or \
-                      hasattr(self.model_wrapper, 'log_lik')
+        hasattr(self.model_wrapper, 'log_lik')
     if is_reparameterizable:
       if is_analytic_kl:
         return build_reparam_kl_loss_and_gradients(self, var_list)
