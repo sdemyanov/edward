@@ -16,7 +16,7 @@ class test_get_ancestors_class(tf.test.TestCase):
       b = Normal(mu=a, sigma=1.0)
       c = Normal(mu=0.0, sigma=1.0)
       d = Normal(mu=c, sigma=1.0)
-      e = Normal(mu=tf.mul(b, d), sigma=1.0)
+      e = Normal(mu=tf.multiply(b, d), sigma=1.0)
       self.assertEqual(get_ancestors(a), [])
       self.assertEqual(get_ancestors(b), [a])
       self.assertEqual(get_ancestors(c), [])
@@ -72,6 +72,23 @@ class test_get_ancestors_class(tf.test.TestCase):
       self.assertEqual(get_ancestors(c), [])
       self.assertEqual(set(get_ancestors(d)), set([a, b]))
       self.assertEqual(set(get_ancestors(e)), set([a, b]))
+
+  def test_scan(self):
+    """copied form test_chain_structure"""
+    def cumsum(x):
+      return tf.scan(lambda a, x: a + x, x)
+
+    with self.test_session():
+      a = Normal(mu=tf.ones([3]), sigma=tf.ones([3]))
+      b = Normal(mu=cumsum(a), sigma=tf.ones([3]))
+      c = Normal(mu=cumsum(b), sigma=tf.ones([3]))
+      d = Normal(mu=cumsum(c), sigma=tf.ones([3]))
+      e = Normal(mu=cumsum(d), sigma=tf.ones([3]))
+      self.assertEqual(get_ancestors(a), [])
+      self.assertEqual(get_ancestors(b), [a])
+      self.assertEqual(set(get_ancestors(c)), set([a, b]))
+      self.assertEqual(set(get_ancestors(d)), set([a, b, c]))
+      self.assertEqual(set(get_ancestors(e)), set([a, b, c, d]))
 
 if __name__ == '__main__':
   tf.test.main()

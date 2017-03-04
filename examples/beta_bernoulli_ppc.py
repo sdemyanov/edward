@@ -25,16 +25,11 @@ qp_a = tf.nn.softplus(tf.Variable(tf.random_normal([])))
 qp_b = tf.nn.softplus(tf.Variable(tf.random_normal([])))
 qp = Beta(a=qp_a, b=qp_b)
 
-data = {x: x_data}
-inference = ed.KLqp({p: qp}, data)
+inference = ed.KLqp({p: qp}, data={x: x_data})
 inference.run(n_iter=500)
 
 # CRITICISM
 x_post = ed.copy(x, {p: qp})
 
-
-def T(xs, zs):
-  return tf.reduce_mean(tf.cast(xs[x_post], tf.float32))
-
-
-print(ed.ppc(T, data={x_post: x_data}))
+print(ed.ppc(lambda xs, zs: tf.reduce_mean(tf.cast(xs[x_post], tf.float32)),
+             data={x_post: x_data}))

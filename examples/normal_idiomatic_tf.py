@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 """This demonstrates a more idiomatic TensorFlow example, which
-provides more fine-grained experimentation. We do not call
-inference.run().  Alternatively, we directly access the TensorFlow
-session and manipulate various objects during inference.
+provides more fine experimentation. We do not call inference.run().
+Alternatively, we directly manipulate various objects during
+inference.
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -25,7 +25,7 @@ qz = Normal(mu=tf.Variable(tf.random_normal([])),
 inference = ed.KLqp({z: qz})
 inference.initialize(n_iter=250)
 
-init = tf.initialize_all_variables()
+init = tf.global_variables_initializer()
 init.run()
 
 for _ in range(inference.n_iter):

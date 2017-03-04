@@ -1,7 +1,8 @@
 [![edward](../master/docs/images/edward_200.png?raw=true)](http://edwardlib.org)
 
 [![Build Status](https://travis-ci.org/blei-lab/edward.svg?branch=master)](https://travis-ci.org/blei-lab/edward)
-[![Coverage Status](https://coveralls.io/repos/github/blei-lab/edward/badge.svg?branch=master)](https://coveralls.io/github/blei-lab/edward?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/blei-lab/edward/badge.svg?branch=master&cacheBuster=1)](https://coveralls.io/github/blei-lab/edward?branch=master)
+[![Join the chat at https://gitter.im/blei-lab/edward](https://badges.gitter.im/blei-lab/edward.svg)](https://gitter.im/blei-lab/edward?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 [Edward](http://edwardlib.org) is a Python library for probabilistic modeling,
 inference, and criticism. It is a testbed for fast experimentation and research
@@ -16,7 +17,7 @@ It supports __modeling__ with
 + Neural networks (via libraries such as
     [Keras](http://keras.io) and [TensorFlow
     Slim](https://github.com/tensorflow/tensorflow/tree/master/tensorflow/contrib/slim))
-+ Conditionally specified undirected models
++ Intractable likelihoods
 + Bayesian nonparametrics and probabilistic programs
 
 It supports __inference__ with
@@ -24,16 +25,16 @@ It supports __inference__ with
 + Variational inference
   + Black box variational inference
   + Stochastic variational inference
-  + Variational auto-encoders
-  + Inclusive KL divergence: KL(p||q)
+  + Generative adversarial networks
+  + Maximum a posteriori estimation
 + Monte Carlo
   + Hamiltonian Monte Carlo
   + Stochastic gradient Langevin dynamics
   + Metropolis-Hastings
-+ Marginal optimization (empirical Bayes, marginal maximum likelihood)
-  + Variational EM
-+ Maximum a posteriori estimation (penalized maximum likelihood)
-  + Laplace approximation
++ Compositions of inference
+  + Expectation-Maximization
+  + Pseudo-marginal and ABC methods
+  + Message passing algorithms
 
 It supports __criticism__ of the model and inference with
 
@@ -48,3 +49,5 @@ visualization with TensorBoard.
 ## Resources
 
 + [Edward website](http://edwardlib.org)
++ [Edward Gitter channel](http://gitter.im/blei-lab/edward)
++ [Edward releases](https://github.com/blei-lab/edward/releases)

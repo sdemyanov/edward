@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Hierarchical logistic regression using mean-field variational inference.
+"""Hierarchical logistic regression using variational inference.
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -52,7 +52,7 @@ class HierarchicalLogistic:
 def build_toy_dataset(N, noise_std=0.1):
   D = 1
   x = np.linspace(-3, 3, num=N)
-  y = np.tanh(x) + norm.rvs(0, noise_std, size=N)
+  y = np.tanh(x) + np.random.normal(0, noise_std, size=N)
   y[y < 0.5] = 0
   y[y >= 0.5] = 1
   x = (x - 4.0) / 4.0
@@ -88,7 +88,7 @@ data = {'x': x_train, 'y': y_train}
 inference = ed.KLqp({'w': qw, 'b': qb}, data, model)
 inference.initialize(n_print=5, n_iter=600)
 
-init = tf.initialize_all_variables()
+init = tf.global_variables_initializer()
 init.run()
 
 for t in range(inference.n_iter):

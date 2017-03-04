@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Bayesian neural network using mean-field variational inference
+"""Bayesian neural network using variational inference
 (see, e.g., Blundell et al. (2015); Kucukelbir et al. (2016)).
 
 Inspired by autograd's Bayesian neural network example.
@@ -14,22 +14,22 @@ import numpy as np
 import tensorflow as tf
 
 from edward.models import Normal
-from edward.stats import norm
 
 plt.style.use('ggplot')
 
 
 def build_toy_dataset(N=50, noise_std=0.1):
   x = np.linspace(-3, 3, num=N)
-  y = np.cos(x) + norm.rvs(0, noise_std, size=N)
-  x = x.reshape((N, 1))
+  y = np.cos(x) + np.random.normal(0, noise_std, size=N)
+  x = x.astype(np.float32).reshape((N, 1))
+  y = y.astype(np.float32)
   return x, y
 
 
 def neural_network(x, W_0, W_1, b_0, b_1):
-    h = tf.nn.tanh(tf.matmul(x, W_0) + b_0)
-    h = tf.matmul(h, W_1) + b_1
-    return tf.reshape(h, [-1])
+  h = tf.tanh(tf.matmul(x, W_0) + b_0)
+  h = tf.matmul(h, W_1) + b_1
+  return tf.reshape(h, [-1])
 
 
 ed.set_seed(42)
@@ -46,7 +46,7 @@ W_1 = Normal(mu=tf.zeros([2, 1]), sigma=tf.ones([2, 1]))
 b_0 = Normal(mu=tf.zeros(2), sigma=tf.ones(2))
 b_1 = Normal(mu=tf.zeros(1), sigma=tf.ones(1))
 
-x = tf.convert_to_tensor(x_train, dtype=tf.float32)
+x = x_train
 y = Normal(mu=neural_network(x, W_0, W_1, b_0, b_1),
            sigma=0.1 * tf.ones(N))
 
@@ -60,9 +60,8 @@ qb_0 = Normal(mu=tf.Variable(tf.random_normal([2])),
 qb_1 = Normal(mu=tf.Variable(tf.random_normal([1])),
               sigma=tf.nn.softplus(tf.Variable(tf.random_normal([1]))))
 
-data = {y: y_train}
 inference = ed.KLqp({W_0: qW_0, b_0: qb_0,
-                     W_1: qW_1, b_1: qb_1}, data)
+                     W_1: qW_1, b_1: qb_1}, data={y: y_train})
 
 
 # Sample functions from variational model to visualize fits.
@@ -74,10 +73,10 @@ for s in range(10):
   mus += [neural_network(x, qW_0.sample(), qW_1.sample(),
                          qb_0.sample(), qb_1.sample())]
 
-mus = tf.pack(mus)
+mus = tf.stack(mus)
 
 sess = ed.get_session()
-init = tf.initialize_all_variables()
+init = tf.global_variables_initializer()
 init.run()
 
 
@@ -97,7 +96,7 @@ ax.legend()
 plt.show()
 
 
-# RUN MEAN-FIELD VARIATIONAL INFERENCE
+# RUN VARIATIONAL INFERENCE
 inference.run(n_iter=500, n_samples=5)
 
 

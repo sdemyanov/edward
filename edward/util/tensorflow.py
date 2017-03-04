@@ -4,6 +4,7 @@ from __future__ import print_function
 
 import numpy as np
 import tensorflow as tf
+import warnings
 
 from edward.util.random_variables import get_dims
 from edward.util.graphs import get_session
@@ -81,7 +82,7 @@ def hessian(y, xs):
     # Calculate flattened vector grad_{xs} y.
     grads = tf.gradients(y, xs)
     grads = [tf.reshape(grad, [-1]) for grad in grads]
-    grads = tf.concat(0, grads)
+    grads = tf.concat(grads, 0)
     # Loop over each element in the vector.
     mat = []
     d = grads.get_shape()[0]
@@ -102,11 +103,11 @@ def hessian(y, xs):
         hij = tf.reshape(hij, [-1])
         hi.append(hij)
 
-      hi = tf.concat(0, hi)
+      hi = tf.concat(hi, 0)
       mat.append(hi)
 
     # Form matrix where each row is grad_{xs} ( [ grad_{xs} y ]_j ).
-    return tf.pack(mat)
+    return tf.stack(mat)
 
 
 def kl_multivariate_normal(loc_one, scale_one, loc_two=0.0, scale_two=1.0):
@@ -172,15 +173,15 @@ def kl_multivariate_normal(loc_one, scale_one, loc_two=0.0, scale_two=1.0):
     return 0.5 * tf.reduce_sum(out, 1)
 
 
-def log_mean_exp(input_tensor, reduction_indices=None, keep_dims=False):
+def log_mean_exp(input_tensor, axis=None, keep_dims=False):
   """Compute the ``log_mean_exp`` of elements in a tensor, taking
-  the mean across axes given by ``reduction_indices``.
+  the mean across axes given by ``axis``.
 
   Parameters
   ----------
   input_tensor : tf.Tensor
     The tensor to reduce. Should have numeric type.
-  reduction_indices : int or list of int, optional
+  axis : int or list of int, optional
     The dimensions to reduce. If `None` (the default), reduces all
     dimensions.
   keep_dims : bool, optional
@@ -200,20 +201,20 @@ def log_mean_exp(input_tensor, reduction_indices=None, keep_dims=False):
   dependencies = [tf.verify_tensor_all_finite(input_tensor, msg='')]
   input_tensor = control_flow_ops.with_dependencies(dependencies, input_tensor)
 
-  x_max = tf.reduce_max(input_tensor, reduction_indices, keep_dims=True)
+  x_max = tf.reduce_max(input_tensor, axis, keep_dims=True)
   return tf.squeeze(x_max) + tf.log(tf.reduce_mean(
-      tf.exp(input_tensor - x_max), reduction_indices, keep_dims))
+      tf.exp(input_tensor - x_max), axis, keep_dims))
 
 
-def log_sum_exp(input_tensor, reduction_indices=None, keep_dims=False):
+def log_sum_exp(input_tensor, axis=None, keep_dims=False):
   """Compute the ``log_sum_exp`` of elements in a tensor, taking
-  the sum across axes given by ``reduction_indices``.
+  the sum across axes given by ``axis``.
 
   Parameters
   ----------
   input_tensor : tf.Tensor
     The tensor to reduce. Should have numeric type.
-  reduction_indices : int or list of int, optional
+  axis : int or list of int, optional
     The dimensions to reduce. If `None` (the default), reduces all
     dimensions.
   keep_dims : bool, optional
@@ -233,9 +234,9 @@ def log_sum_exp(input_tensor, reduction_indices=None, keep_dims=False):
   dependencies = [tf.verify_tensor_all_finite(input_tensor, msg='')]
   input_tensor = control_flow_ops.with_dependencies(dependencies, input_tensor)
 
-  x_max = tf.reduce_max(input_tensor, reduction_indices, keep_dims=True)
+  x_max = tf.reduce_max(input_tensor, axis, keep_dims=True)
   return tf.squeeze(x_max) + tf.log(tf.reduce_sum(
-      tf.exp(input_tensor - x_max), reduction_indices, keep_dims))
+      tf.exp(input_tensor - x_max), axis, keep_dims))
 
 
 def logit(x):
@@ -313,6 +314,9 @@ def multivariate_rbf(x, y=0.0, sigma=1.0, l=1.0):
 def placeholder(*args, **kwargs):
   """A wrapper around ``tf.placeholder``. It adds the tensor to the
   ``PLACEHOLDERS`` collection."""
+  warnings.simplefilter('default', DeprecationWarning)
+  warnings.warn("ed.placeholder() is deprecated; use tf.placeholder() instead.",
+                DeprecationWarning)
   x = tf.placeholder(*args, **kwargs)
   tf.add_to_collection("PLACEHOLDERS", x)
   return x
@@ -364,105 +368,6 @@ def rbf(x, y=0.0, sigma=1.0, l=1.0):
       tf.exp(-1.0 / (2.0 * tf.pow(l, 2.0)) * tf.pow(x - y, 2.0))
 
 
-def tile(input, multiples, *args, **kwargs):
-  """Constructs a tensor by tiling a given tensor.
-
-  This extends ``tf.tile`` to features available in ``np.tile``.
-  Namely, ``inputs`` and ``multiples`` can be a 0-D tensor.  Further,
-  if 1-D, ``multiples`` can be of any length according to broadcasting
-  rules (see documentation of ``np.tile`` or examples below).
-
-  Parameters
-  ----------
-  input : tf.Tensor
-    The input tensor.
-  multiples : tf.Tensor
-    The number of repetitions of ``input`` along each axis. Has type
-    ``tf.int32``. 0-D or 1-D.
-  *args :
-    Passed into ``tf.tile``.
-  **kwargs :
-    Passed into ``tf.tile``.
-
-  Returns
-  -------
-  tf.Tensor
-      Has the same type as ``input``.
-
-  Examples
-  --------
-  >>> a = tf.constant([0, 1, 2])
-  >>> sess.run(ed.tile(a, 2))
-  array([0, 1, 2, 0, 1, 2], dtype=int32)
-  >>> sess.run(ed.tile(a, (2, 2)))
-  array([[0, 1, 2, 0, 1, 2],
-         [0, 1, 2, 0, 1, 2]], dtype=int32)
-  >>> sess.run(ed.tile(a, (2, 1, 2)))
-  array([[[0, 1, 2, 0, 1, 2]],
-         [[0, 1, 2, 0, 1, 2]]], dtype=int32)
-  >>>
-  >>> b = tf.constant([[1, 2], [3, 4]])
-  >>> sess.run(ed.tile(b, 2))
-  array([[1, 2, 1, 2],
-         [3, 4, 3, 4]], dtype=int32)
-  >>> sess.run(ed.tile(b, (2, 1)))
-  array([[1, 2],
-         [3, 4],
-         [1, 2],
-         [3, 4]], dtype=int32)
-  >>>
-  >>> c = tf.constant([1, 2, 3, 4])
-  >>> sess.run(ed.tile(c, (4, 1)))
-  array([[1, 2, 3, 4],
-         [1, 2, 3, 4],
-         [1, 2, 3, 4],
-         [1, 2, 3, 4]], dtype=int32)
-
-  Notes
-  -----
-  Sometimes this can result in an unknown shape. The core reason for
-  this is the following behavior:
-
-  >>> n = tf.constant([1])
-  >>> tf.tile(tf.constant([[1.0]]),
-  ...         tf.concat(0, [n, tf.constant([1.0]).get_shape()]))
-  <tf.Tensor 'Tile:0' shape=(1, 1) dtype=float32>
-  >>> n = tf.reshape(tf.constant(1), [1])
-  >>> tf.tile(tf.constant([[1.0]]),
-  ...         tf.concat(0, [n, tf.constant([1.0]).get_shape()]))
-  <tf.Tensor 'Tile_1:0' shape=(?, 1) dtype=float32>
-
-  For this reason, we try to fetch ``multiples`` out of session if
-  possible. This can be slow if ``multiples`` has computationally
-  intensive dependencies in order to perform this fetch.
-  """
-  input = tf.convert_to_tensor(input)
-  multiples = tf.convert_to_tensor(multiples)
-
-  # 0-d tensor
-  if len(input.get_shape()) == 0:
-    input = tf.expand_dims(input, 0)
-
-  # 0-d tensor
-  if len(multiples.get_shape()) == 0:
-    multiples = tf.expand_dims(multiples, 0)
-
-  try:
-    get_session()
-    multiples = tf.convert_to_tensor(multiples.eval())
-  except:
-    pass
-
-  # broadcasting
-  diff = len(input.get_shape()) - get_dims(multiples)[0]
-  if diff < 0:
-    input = tf.reshape(input, [1] * np.abs(diff) + get_dims(input))
-  elif diff > 0:
-    multiples = tf.concat(0, [tf.ones(diff, dtype=tf.int32), multiples])
-
-  return tf.tile(input, multiples, *args, **kwargs)
-
-
 def to_simplex(x):
   """Transform real vector of length ``(K-1)`` to a simplex of dimension ``K``
   using a backward stick breaking construction.
@@ -501,8 +406,8 @@ def to_simplex(x):
     K_minus_one = shape[0]
     eq = -tf.log(tf.cast(K_minus_one - tf.range(K_minus_one), dtype=tf.float32))
     z = tf.sigmoid(eq + x)
-    pil = tf.concat(0, [z, tf.constant([1.0])])
-    piu = tf.concat(0, [tf.constant([1.0]), 1.0 - z])
+    pil = tf.concat([z, tf.constant([1.0])], 0)
+    piu = tf.concat([tf.constant([1.0]), 1.0 - z], 0)
     S = tf.cumprod(piu)
     return S * pil
   else:
@@ -510,7 +415,7 @@ def to_simplex(x):
     K_minus_one = shape[1]
     eq = -tf.log(tf.cast(K_minus_one - tf.range(K_minus_one), dtype=tf.float32))
     z = tf.sigmoid(eq + x)
-    pil = tf.concat(1, [z, tf.ones([n_rows, 1])])
-    piu = tf.concat(1, [tf.ones([n_rows, 1]), 1.0 - z])
+    pil = tf.concat([z, tf.ones([n_rows, 1])], 1)
+    piu = tf.concat([tf.ones([n_rows, 1]), 1.0 - z], 1)
     S = tf.cumprod(piu, axis=1)
     return S * pil

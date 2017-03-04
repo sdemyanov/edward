@@ -4,8 +4,6 @@ language: python
 matrix:
     include:
         - python: 2.7
-        - python: 2.7
-          env: TEST_MODE=PEP8
         - python: 3.4
 notifications:
     email: false
@@ -31,18 +29,16 @@ install:
   - pip install pep8 pytest-pep8 pytest-xdist
   - pip install python-coveralls pytest-cov
   - pip install numpydoc
-  - pip install git+https://github.com/pymc-devs/pymc3
+  - pip install pymc3
+  - pip install keras
   - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
-      pip install https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-0.11.0rc0-cp27-none-linux_x86_64.whl;
+      pip install https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-1.0.0rc0-cp27-none-linux_x86_64.whl;
     elif [[ "$TRAVIS_PYTHON_VERSION" == "3.4" ]]; then
-      pip install https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-0.11.0rc0-cp34-cp34m-linux_x86_64.whl;
+      pip install https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-1.0.0rc0-cp34-cp34m-linux_x86_64.whl;
     fi
   - python setup.py install
 script:
-  - if [[ "$TEST_MODE" == "PEP8" ]]; then
-       PYTHONPATH=$PWD:$PYTHONPATH py.test --pep8 -m pep8 -n0;
-    else
-       PYTHONPATH=$PWD:$PYTHONPATH py.test tests/;
-    fi
+  - PYTHONPATH=$PWD:$PYTHONPATH py.test --cov=./ --pep8;
+
 after_success:
   - coveralls
